@@ -15,3 +15,7 @@ docker run -d --restart=always --name=ddns ghcr.io/myyra/ddns \
     -recordName="home.example.com" \
     -zoneName="example.com"
 ```
+
+If the record for the subdomain doesn't exist yet, it will be created.
+
+If it already exists, it will be updated only if the IP has changed.
