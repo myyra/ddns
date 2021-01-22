@@ -23,6 +23,8 @@ func main() {
 		log.Fatal().Err(err).Msg("constructing Cloudflare API client")
 	}
 
+	log.Info().Msg("starting DNS updates")
+
 	go func() {
 		logger := log.With().Str("zone_name", *zoneFlag).Str("record_name", *recordFlag).Logger()
 
@@ -44,5 +46,6 @@ func main() {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	<-c
+	log.Info().Msg("stopping")
 	os.Exit(0)
 }
