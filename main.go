@@ -18,7 +18,13 @@ func main() {
 
 	flag.Parse()
 
-	api, err := cloudflare.NewWithAPIToken(*tokenFlag)
+	token := *tokenFlag
+
+	if token == "" {
+		token = os.Getenv("CLOUDFLARE_TOKEN")
+	}
+
+	api, err := cloudflare.NewWithAPIToken(token)
 	if err != nil {
 		log.Fatal().Err(err).Msg("constructing Cloudflare API client")
 	}
