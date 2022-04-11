@@ -15,6 +15,9 @@ jobs:
     if: github.event_name == 'push'
     name: "Push image"
 
+    permissions:
+      packages: write
+
     steps:
       - uses: actions/checkout@v2
 
