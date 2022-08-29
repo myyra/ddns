@@ -56,6 +56,7 @@ func startUpdating(
 	ticker := time.NewTicker(2 * time.Minute)
 	go func() {
 		defer ticker.Stop()
+		defer close(done)
 		for {
 			select {
 			case <-ctx.Done():
