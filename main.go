@@ -63,6 +63,8 @@ func startUpdating(
 				done <- struct{}{}
 				return
 			case <-ticker.C:
+				ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
+				defer cancel()
 				err := update(ctx, api, zoneName, recordName)
 				if err != nil {
 					log.Error().Err(err).Msg("doing update")
@@ -78,6 +80,10 @@ func update(ctx context.Context, api *cloudflare.API, zoneName, recordName strin
 	ip, err := getIP(ctx)
 	if err != nil {
 		return fmt.Errorf("getting IP: %w", err)
+	}
+
+	if ctx.Err() != nil {
+		return fmt.Errorf("context is done: %w", ctx.Err())
 	}
 
 	ctx = log.With().Str("current_ip", ip).Logger().WithContext(ctx)
