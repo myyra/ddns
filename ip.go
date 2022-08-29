@@ -9,8 +9,8 @@ import (
 	"time"
 )
 
-func getIP() (string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+func getIP(ctx context.Context) (string, error) {
+	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
 
 	url := "https://1.1.1.1/cdn-cgi/trace"

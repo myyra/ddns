@@ -75,12 +75,13 @@ func startUpdating(
 
 func update(ctx context.Context, api *cloudflare.API, zoneName, recordName string) error {
 	log := zerolog.Ctx(ctx)
-	ip, err := getIP()
+	ip, err := getIP(ctx)
 	if err != nil {
 		return fmt.Errorf("getting IP: %w", err)
 	}
-	updateCtx := log.With().Str("current_ip", ip).Logger().WithContext(ctx)
-	err = updateRecord(updateCtx, api, zoneName, recordName, ip)
+
+	ctx = log.With().Str("current_ip", ip).Logger().WithContext(ctx)
+	err = updateRecord(ctx, api, zoneName, recordName, ip)
 	if err != nil {
 		return fmt.Errorf("updating record: %w", err)
 	}
