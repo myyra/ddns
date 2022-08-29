@@ -17,7 +17,13 @@ func main() {
 	zoneFlag := flag.String("zoneName", "", "Zone name/domain")
 	recordFlag := flag.String("recordName", "", "Record name/FQDN")
 	tokenFlag := flag.String("token", "", "Cloudflare API token")
+	debugFlag := flag.Bool("debug", false, "Use debug logging")
 	flag.Parse()
+
+	zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	if *debugFlag {
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	}
 
 	log := zerolog.New(os.Stdout).With().Str("zone_name", *zoneFlag).Str("record_name", *recordFlag).Logger()
 	ctx := log.WithContext(context.Background())
@@ -64,6 +70,7 @@ func startUpdating(
 				done <- struct{}{}
 				return
 			case <-ticker.C:
+				log.Debug().Msg("updating record if needed")
 				ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
 				defer cancel()
 				err := update(ctx, api, zoneName, recordName)
