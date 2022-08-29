@@ -3,14 +3,14 @@ package main
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 	"time"
 )
 
-func getIP() (string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+func getIP(ctx context.Context) (string, error) {
+	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
 
 	url := "https://1.1.1.1/cdn-cgi/trace"
@@ -25,7 +25,7 @@ func getIP() (string, error) {
 	}
 	defer resp.Body.Close()
 
-	data, err := ioutil.ReadAll(resp.Body)
+	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", fmt.Errorf("reading response: %w", err)
 	}

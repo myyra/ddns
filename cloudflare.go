@@ -1,36 +1,44 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"time"
 
 	"github.com/cloudflare/cloudflare-go"
 	"github.com/rs/zerolog"
 )
 
-func updateRecord(logger zerolog.Logger, api *cloudflare.API, zoneName string, recordName, ip string) error {
+func updateRecord(
+	ctx context.Context,
+	api *cloudflare.API,
+	zoneName string,
+	recordName, ip string,
+) error {
+	log := zerolog.Ctx(ctx)
+	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	defer cancel()
+
 	zoneID, err := api.ZoneIDByName(zoneName)
 	if err != nil {
 		return fmt.Errorf("finding zone by name %s: %w", zoneName, err)
 	}
-	searchRecord := cloudflare.DNSRecord{
-		Type: "A",
-		Name: recordName,
-	}
-	wantRecord := cloudflare.DNSRecord{
+	newRecord := cloudflare.DNSRecord{
 		Type:    "A",
 		Name:    recordName,
 		TTL:     120,
 		Content: ip,
 	}
 
-	records, err := api.DNSRecords(zoneID, searchRecord)
+	currentRecord, err := getCurrentRecord(ctx, api, zoneID, recordName)
 	if err != nil {
-		return fmt.Errorf("getting records for zone %s: %w", zoneName, err)
+		return fmt.Errorf("getting current record for zone %s: %w", zoneName, err)
 	}
-	if len(records) == 0 {
-		logger.Info().Msg("record not found, creating")
 
-		resp, err := api.CreateDNSRecord(zoneID, wantRecord)
+	if currentRecord == nil {
+		log.Info().Msg("record not found, creating")
+
+		resp, err := api.CreateDNSRecord(ctx, zoneID, newRecord)
 		if err != nil {
 			return fmt.Errorf("create record: %w", err)
 		}
@@ -39,17 +47,35 @@ func updateRecord(logger zerolog.Logger, api *cloudflare.API, zoneName string, r
 		}
 
 		return nil
-	} else {
-		record := records[0]
-		if record.Content != ip {
-			logger.Info().Str("old_ip", record.Content).Msg("IP has changed, updating")
+	}
 
-			err := api.UpdateDNSRecord(zoneID, records[0].ID, wantRecord)
-			if err != nil {
-				return fmt.Errorf("update record: %w", err)
-			}
+	if currentRecord.Content != ip {
+		log.Info().Str("old_ip", currentRecord.Content).Msg("IP has changed, updating")
+
+		err := api.UpdateDNSRecord(ctx, zoneID, currentRecord.ID, newRecord)
+		if err != nil {
+			return fmt.Errorf("update record: %w", err)
 		}
 	}
 
 	return nil
+}
+
+func getCurrentRecord(
+	ctx context.Context,
+	api *cloudflare.API,
+	zoneID, recordName string,
+) (*cloudflare.DNSRecord, error) {
+	searchRecord := cloudflare.DNSRecord{
+		Type: "A",
+		Name: recordName,
+	}
+	records, err := api.DNSRecords(ctx, zoneID, searchRecord)
+	if err != nil {
+		return nil, fmt.Errorf("getting records: %w", err)
+	}
+	if len(records) == 0 {
+		return nil, nil
+	}
+	return &records[0], nil
 }
