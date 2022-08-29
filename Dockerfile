@@ -1,7 +1,5 @@
 FROM golang:1.19 as builder
 
-RUN apk add --no-cache ca-certificates git
-
 COPY go.sum go.mod /ddns/
 
 WORKDIR /ddns
