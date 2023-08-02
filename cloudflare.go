@@ -39,12 +39,9 @@ func updateRecord(
 	if currentRecord == nil {
 		log.Info().Msg("record not found, creating")
 
-		resp, err := api.CreateDNSRecord(ctx, zoneContainer, createRecordParams)
+		_, err := api.CreateDNSRecord(ctx, zoneContainer, createRecordParams)
 		if err != nil {
 			return fmt.Errorf("create record: %w", err)
-		}
-		if len(resp.Errors) != 0 {
-			return fmt.Errorf("create record returned errors: %v", resp.Errors)
 		}
 
 		return nil
@@ -60,7 +57,7 @@ func updateRecord(
 			Content: createRecordParams.Content,
 		}
 
-		err := api.UpdateDNSRecord(ctx, zoneContainer, updateRecordParams)
+		_, err := api.UpdateDNSRecord(ctx, zoneContainer, updateRecordParams)
 		if err != nil {
 			return fmt.Errorf("update record: %w", err)
 		}
