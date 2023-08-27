@@ -6,13 +6,14 @@ import (
 	"io"
 	"net/http"
 	"strings"
-	"time"
+
+	"github.com/rs/zerolog"
 )
 
 func getIP(ctx context.Context) (string, error) {
-	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
-	defer cancel()
+	log := zerolog.Ctx(ctx)
 
+	log.Debug().Msg("getting IP from Cloudflare")
 	url := "https://1.1.1.1/cdn-cgi/trace"
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
@@ -24,6 +25,7 @@ func getIP(ctx context.Context) (string, error) {
 		return "", fmt.Errorf("doing request: %w", err)
 	}
 	defer resp.Body.Close()
+	log.Debug().Msg("got response from Cloudflare")
 
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -36,6 +38,7 @@ func getIP(ctx context.Context) (string, error) {
 		return "", fmt.Errorf("data doesn't look like k/v pairs, got: %v", kvpairs)
 	}
 	for _, kvpair := range kvpairs {
+		log.Debug().Str("kvpair", kvpair).Msg("parsing k/v pair")
 		if strings.Contains(kvpair, "=") {
 			kv := strings.Split(kvpair, "=")
 			if len(kv) != 2 {
